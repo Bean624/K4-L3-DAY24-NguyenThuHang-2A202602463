@@ -6,7 +6,7 @@
   - Gitleaks version: v8.30.1 (được pin chính thức trong `.pre-commit-config.yaml`)
 
 - `python -m pytest tests/ -q`:
-  - 33 passed in 5.66s (100% toàn bộ 33 test unit và integration passed).
+  - 39 passed in 3.99s (100% toàn bộ 33 core tests + 6 bonus tests passed; không skip, không fail).
 
 - `pre-commit run --all-files`:
   - Đã cấu hình `.pre-commit-config.yaml` sử dụng hook `gitleaks-system` từ `https://github.com/gitleaks/gitleaks`, pin chính xác `rev: v8.30.1` và `pass_filenames: false`.
