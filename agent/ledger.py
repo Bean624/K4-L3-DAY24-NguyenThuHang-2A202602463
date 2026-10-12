@@ -37,12 +37,76 @@ rồi gọi verify() phải trả về False.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 
 
+def _compute_hash(entry: dict) -> str:
+    to_hash = {k: v for k, v in entry.items() if k != "hash"}
+    encoded = json.dumps(to_hash, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def append(entry: dict, path: Path) -> dict:
-    raise NotImplementedError("BƯỚC 3d: implement ledger append")
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    prev_hash = "0" * 64
+    if path.exists():
+        lines = path.read_text(encoding="utf-8").splitlines()
+        for line in reversed(lines):
+            line = line.strip()
+            if line:
+                try:
+                    last_entry = json.loads(line)
+                    prev_hash = last_entry.get("hash", "0" * 64)
+                    break
+                except Exception:
+                    pass
+
+    record = dict(entry)
+    record["prev_hash"] = prev_hash
+    record["hash"] = _compute_hash(record)
+
+    with path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    return record
 
 
 def verify(path: Path) -> bool:
-    raise NotImplementedError("BƯỚC 3d: implement ledger verify")
+    path = Path(path)
+    if not path.exists():
+        return True
+
+    lines = [line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    if not lines:
+        return True
+
+    expected_prev_hash = "0" * 64
+    for line in lines:
+        try:
+            entry = json.loads(line)
+        except Exception:
+            return False
+
+        # 1. Reason non-empty
+        reason = entry.get("reason")
+        if not reason or not str(reason).strip():
+            return False
+
+        # 2. prev_hash matches
+        prev_hash = entry.get("prev_hash")
+        if prev_hash != expected_prev_hash:
+            return False
+
+        # 3. hash matches
+        stored_hash = entry.get("hash")
+        computed_hash = _compute_hash(entry)
+        if stored_hash != computed_hash:
+            return False
+
+        expected_prev_hash = stored_hash
+
+    return True
