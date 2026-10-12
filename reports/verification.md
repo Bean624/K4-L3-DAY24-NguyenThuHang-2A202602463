@@ -16,6 +16,15 @@
   - Kết quả kiểm tra: `verify(Path('reports/ledger.jsonl')) == True`.
   - Toàn vẹn chuỗi băm SHA-256 (tamper-evident hash chain) hợp lệ, 100% các dòng log tool call đều có `reason` minh bạch, không có dòng nào bị trống.
 
+- Kết quả kiểm thử PII Gate (`agent/pii.py`):
+  - Lệnh: `python -m pytest tests/test_pii.py -v -s --basetemp=.pytest_tmp`
+  - Kết quả: `gold=118`, `pred=118`, `tp=118`
+  - `precision`: **1.000** (100% thực thể phát hiện là chính xác)
+  - `recall`: **1.000** (100% thực thể gán nhãn được tìm thấy; đạt mức cao nhất >95% theo RUBRIC.md)
+  - Giới hạn của regex:
+    - Regex dựa trên cấu trúc cố định và từ khoá tiền tố (như "STK", "tài khoản"). Nếu người dùng viết cách rời số (vd `09 12 345 678`), viết bằng chữ ("không chín một..."), hoặc số tài khoản không có tiền tố ngữ cảnh thì regex sẽ bỏ sót (false negative) hoặc nhận diện nhầm sang CCCD nếu cùng độ dài 12 chữ số.
+    - Không bắt được các loại PII phi cấu trúc mang tính ngữ nghĩa tự do (địa chỉ nhà chi tiết, bệnh án, thông tin sinh trắc học) mà cần mô hình Zero-shot NER như GLiNER.
+
 - Các lỗi còn lại:
   - Không còn lỗi nào tồn đọng. Toàn bộ các điều kiện trượt theo `RUBRIC.md` đều được kiểm soát và đáp ứng:
     1. Không có dòng ledger nào thiếu `reason`.
